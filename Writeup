@@ -1,0 +1,147 @@
+Challenge Overview
+
+This network forensic challenge required participants to analyze a packet capture (anil.txt) containing multiple security incidents and protocol anomalies. The investigation tested skills in TLS analysis, TCP stream reassembly, statistical anomaly detection, and covert channel identification.
+
+---
+
+Solutions & Methodologies
+
+1. Cipher Suite Extraction
+
+Solution: ***************
+
+Methodology:
+
+· Filter: frame.number == 12
+· Navigate to: TLS → Handshake Protocol: Server Hello → Cipher Suite
+· The Base64-encoded answer decodes to reveal the actual cipher suite name
+
+2. Fragmented HTTP PID Parameter
+
+Solution: **********
+
+Methodology:
+
+· Filter: http.request.uri contains "tomshardware"
+· Follow TCP Stream to reassemble fragmented request
+· Extract PID parameter from: /xhr.2379762202539.js?PID=...
+· Base64 decoding the provided string reveals the UUID
+
+3. TLS Application Data Rate
+
+Solution: *** packets/second average
+
+Methodology:
+
+· I/O Graph filter: tls.record.content_type == 23
+· Time range: 0-5 seconds
+· Calculate: Total Application Data packets (7) / 5 seconds = 1.4 packets/sec
+
+4. Ghost Segment Analysis
+
+Solution: ****
+
+Methodology:
+
+· Filter: tcp.stream eq 0 && tcp.analysis.ack_lost_segment
+· Frame 14 shows Acknowledgment number: 2777
+· This acknowledges data that was sent but not captured
+
+5. Compromised TLS Random
+
+Solution: **********
+
+Methodology:
+
+· Filter: tls.handshake.type == 1
+· Frame 9 Client Hello → Random → GMT Unix Time: 29778374
+· Weak random values compromise TLS security
+
+6. Illegal Window Scaling
+
+Solution: *
+
+Methodology:
+
+· Filter: tcp.options.wscale.shift
+· RFC 1323 specifies maximum shift count of 14
+· The value 9 is actually legal - the challenge contained a trick question
+
+7. Statistical Anomaly
+
+Solution: ***
+
+
+Methodology:
+
+· Statistics → Protocol Hierarchy
+· POP shows 0.000% packets but contains critical credentials
+· Demonstrates impact ≠ volume in security analysis
+
+8. Multicast Paradox
+
+Solution: SSDP_MULTICAST
+
+Methodology:
+
+· I/O Graph shows regular 30-second spikes from 192.168.0.50
+· Conversations statistics shows only 3 packets from same host
+· Explanation: SSDP multicast packets counted differently in each feature
+
+---
+
+Key Learning Objectives
+
+Technical Skills Developed:
+
+· Advanced Wireshark filtering and statistical analysis
+· TLS/SSL handshake dissection and cryptographic assessment
+· TCP stream reassembly and flow analysis
+· Statistical anomaly detection in network traffic
+· Covert channel identification techniques
+
+Security Concepts Demonstrated:
+
+· Credential exposure through cleartext protocols
+· Cryptographic weaknesses in random number generation
+· Data exfiltration via protocol manipulation
+· Statistical analysis for threat detection
+· Protocol compliance violations
+
+Forensic Methodologies:
+
+· Multi-tool correlation (I/O Graphs vs. Statistics)
+· Protocol hierarchy impact analysis
+· Timing-based attack detection
+· Stream reconstruction for fragmented data
+
+---
+
+Real-World Applications
+
+The techniques practiced in this challenge directly apply to:
+
+· Incident Response: Identifying data exfiltration attempts
+· Security Assessment: Evaluating cryptographic implementations
+· Network Monitoring: Detecting covert communication channels
+· Forensic Investigation: Reconstructing fragmented data transfers
+
+---
+
+Recommendations
+
+Based on findings, organizations should:
+
+1. Enforce TLS 1.2+ with strong cipher suites only
+2. Disable cleartext authentication protocols (POP3 without TLS)
+3. Monitor for TCP fragmentation anomalies
+4. Implement statistical baselining for protocol distributions
+5. Deploy multicast traffic analysis capabilities
+
+---
+
+Challenge Difficulty: Intermediate-Advanced
+Completion Time: 60-90 minutes
+Skills Required: Network protocols, Wireshark proficiency, cryptographic concepts
+
+This challenge effectively bridges academic knowledge and real-world security investigation techniques, providing practical experience in comprehensive network forensic analysis.
